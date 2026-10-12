@@ -1,0 +1,92 @@
+/* Simple, minimal-color theme: grays + one dark accent */
+:root {
+  --bg: #fafafa;
+  --card: #ffffff;
+  --text: #222222;
+  --muted: #777777;
+  --line: #e2e2e2;
+  --accent: #222222;
+  --danger: #b3261e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 640px;
+  margin: 48px auto;
+  padding: 0 16px;
+}
+
+h1 { font-size: 1.5rem; margin: 0 0 16px; }
+h2 { font-size: 1.15rem; margin: 0 0 16px; }
+
+/* top navigation */
+nav {
+  display: flex;
+  gap: 16px;
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover, nav a.router-link-exact-active { color: var(--text); }
+nav a.router-link-exact-active { font-weight: 600; }
+
+/* card around page content */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+/* table */
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+th { font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+tr:last-child td { border-bottom: none; }
+.actions { text-align: right; white-space: nowrap; }
+
+/* buttons (works for <button> and RouterLink) */
+button, .btn {
+  display: inline-block;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+}
+button:hover, .btn:hover { border-color: var(--text); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.danger { color: var(--danger); }
+button.danger:hover { border-color: var(--danger); }
+.actions > * { margin-left: 6px; }
+
+/* form */
+label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+input {
+  width: 100%;
+  font: inherit;
+  padding: 9px 10px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+}
+input:focus { outline: 2px solid var(--text); outline-offset: 1px; }
+.form-buttons { display: flex; gap: 8px; }
+
+.empty { color: var(--muted); margin: 0; }
