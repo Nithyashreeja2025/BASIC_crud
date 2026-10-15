@@ -1,0 +1,454 @@
+Here is a basic and simple Number Guessing Game using HTML, CSS, and JavaScript. It has a uniform design, and all three parts are easy to understand.
+
+## 1. Folder structure
+
+Create a folder named `NumberGame` with these three files:
+
+```
+NumberGame/
+├── index.html
+├── style.css
+└── script.js
+```
+
+## 2. HTML — `index.html`
+
+```
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Number Guessing Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="game">
+        <h1>Number Guessing Game</h1>
+        <p>Guess a number between 1 and 10</p>
+
+        <input type="number" id="guess" placeholder="Enter number">
+
+        <button onclick="checkGuess()">Guess</button>
+
+        <p id="result"></p>
+
+        <button onclick="resetGame()">Reset</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+```
+
+## 3. CSS — `style.css`
+
+```
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f4f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.game {
+    background-color: white;
+    padding: 30px;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0 0 10px gray;
+}
+
+input {
+    padding: 10px;
+    width: 150px;
+    margin: 10px;
+}
+
+button {
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+#result {
+    font-weight: bold;
+}
+```
+
+## 4. JavaScript — `script.js`
+
+```
+let number = Math.floor(Math.random() * 10) + 1;
+
+function checkGuess() {
+    let guess = Number(document.getElementById("guess").value);
+    let result = document.getElementById("result");
+
+    if (guess < 1 || guess > 10 || !guess) {
+        result.innerHTML = "Enter a number from 1 to 10!";
+    }
+    else if (guess === number) {
+        result.innerHTML = "Correct! You won!";
+    }
+    else if (guess < number) {
+        result.innerHTML = "Too low! Try again.";
+    }
+    else {
+        result.innerHTML = "Too high! Try again.";
+    }
+}
+
+function resetGame() {
+    number = Math.floor(Math.random() * 10) + 1;
+    document.getElementById("guess").value = "";
+    document.getElementById("result").innerHTML = "";
+}
+```
+
+## 5. How to run
+
+1. Create the three files in the same folder.
+2. Copy the respective code into each file.
+3. Save all files.
+4. Double-click `index.html` to open it in your browser.
+5. Enter a number between 1 and 10 and click Guess.
+
+## 6. Important concepts
+
+| Technology         | Purpose                                         |
+| ------------------ | ----------------------------------------------- |
+| HTML               | Creates the input, buttons, and headings.       |
+| CSS                | Adds colors, spacing, and layout.               |
+| JavaScript         | Generates a random number and checks the guess. |
+| `getElementById()` | Accesses an HTML element.                       |
+| `Math.random()`    | Generates a random decimal.                     |
+| `onclick`          | Calls a function when a button is clicked.      |
+
+Game logic: The computer selects a random number from 1 to 10. You win when your guess matches that number. Click Reset to start a new game.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 1. Folder structure
+
+Create a folder named `MoleRatGame` with these three files:
+
+```
+MoleRatGame/
+├── index.html
+├── style.css
+└── script.js
+```
+
+## 2. HTML — `index.html`
+
+```
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Whack-a-Mole Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>🐹 Whack-a-Mole Game</h1>
+    <h2>Score: <span id="score">0</span></h2>
+
+    <div class="game">
+        <button onclick="hitMole(0)" id="hole0">🐹</button>
+        <button onclick="hitMole(1)" id="hole1">🐹</button>
+        <button onclick="hitMole(2)" id="hole2">🐹</button>
+        <button onclick="hitMole(3)" id="hole3">🐹</button>
+        <button onclick="hitMole(4)" id="hole4">🐹</button>
+        <button onclick="hitMole(5)" id="hole5">🐹</button>
+    </div>
+
+    <p id="message">Click the mole to score!</p>
+
+    <button onclick="startGame()">Start Game</button>
+
+    <script src="script.js"></script>
+</body>
+</html>
+```
+
+## 3. CSS — `style.css`
+
+```
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #e8f5e9;
+}
+
+h1 {
+    color: #2e7d32;
+}
+
+.game {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    gap: 15px;
+    justify-content: center;
+    margin: 25px;
+}
+
+.game button {
+    height: 100px;
+    width: 100px;
+    font-size: 40px;
+    background-color: #a5d6a7;
+    border: 3px solid #388e3c;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #2e7d32;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#message {
+    font-size: 20px;
+    font-weight: bold;
+}
+```
+
+## 4. JavaScript — `script.js`
+
+```
+let score = 0;
+let mole = -1;
+let timer;
+
+function showMole() {
+    for (let i = 0; i < 6; i++) {
+        document.getElementById("hole" + i).innerHTML = "🕳️";
+    }
+
+    mole = Math.floor(Math.random() * 6);
+
+    document.getElementById("hole" + mole).innerHTML = "🐹";
+}
+
+function hitMole(id) {
+    if (id === mole) {
+        score++;
+        document.getElementById("score").innerHTML = score;
+        document.getElementById("message").innerHTML = "Good job!";
+        showMole();
+    } else {
+        document.getElementById("message").innerHTML = "Try again!";
+    }
+}
+
+function startGame() {
+    clearInterval(timer);
+
+    score = 0;
+    document.getElementById("score").innerHTML = score;
+    document.getElementById("message").innerHTML = "Catch the mole!";
+
+    showMole();
+
+    timer = setInterval(showMole, 1000);
+}
+```
+
+## 5. How to run
+
+1. Create the three files in the same folder.
+2. Paste each code into its respective file and save.
+3. Open `index.html` in Chrome.
+4. Click Start Game.
+5. Click the 🐹 mole before it moves to another hole.
+
+## 6. How it works
+
+| Concept           | Purpose                                      |
+| ----------------- | -------------------------------------------- |
+| HTML              | Creates the game holes and score display.    |
+| CSS               | Arranges the holes in a 3 × 2 grid.          |
+| `Math.random()`   | Selects a random hole.                       |
+| `hitMole()`       | Checks whether the correct hole was clicked. |
+| `setInterval()`   | Moves the mole every second.                 |
+| `clearInterval()` | Clears the previous timer when restarting.   |
+
+Note: This basic version has no time limit. The mole keeps moving until you stop playing or close the page.
+
+
+
+
+
+
+
+Here is a simple Form Submission and Display program using HTML, CSS, and JavaScript. When you submit the form, the entered details will be displayed below it without refreshing the page.
+
+## 1. Folder structure
+
+```
+FormApp/
+├── index.html
+├── style.css
+└── script.js
+```
+
+## 2. HTML — `index.html`
+
+```
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Form</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h2>Student Registration</h2>
+
+        <form id="myForm">
+            <input type="text" id="name" placeholder="Enter Name" required>
+            <input type="email" id="email" placeholder="Enter Email" required>
+            <input type="text" id="course" placeholder="Enter Course" required>
+
+            <button type="submit">Submit</button>
+        </form>
+
+        <div id="output"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+```
+
+## 3. CSS — `style.css`
+
+```
+body {
+    font-family: Arial;
+    background-color: #eaf2f8;
+    display: flex;
+    justify-content: center;
+    padding-top: 50px;
+}
+
+.container {
+    background: white;
+    padding: 25px;
+    width: 300px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px gray;
+}
+
+h2 {
+    text-align: center;
+    color: #007bff;
+}
+
+input {
+    width: 95%;
+    padding: 10px 0;
+    margin: 8px 0;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+#output {
+    margin-top: 20px;
+    color: green;
+}
+```
+
+## 4. JavaScript — `script.js`
+
+```
+document.getElementById("myForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    let name = document.getElementById("name").value;
+    let email = document.getElementById("email").value;
+    let course = document.getElementById("course").value;
+
+    document.getElementById("output").innerHTML =
+        "<h3>Submitted Details</h3>" +
+        "<p>Name: " + name + "</p>" +
+        "<p>Email: " + email + "</p>" +
+        "<p>Course: " + course + "</p>";
+
+    document.getElementById("myForm").reset();
+});
+```
+
+## 5. Sample output
+
+## Student Registration
+
+NamePriya
+
+Emailpriya\@gmail.com
+
+CourseComputer Science
+
+### Submitted Details
+
+Name: Priya
+
+Email: priya\@gmail.com
+
+Course: Computer Science
+
+This illustrates how the submitted details appear below the form.
+
+## 6. Important concepts
+
+| Code                              | Purpose                                     |
+| --------------------------------- | ------------------------------------------- |
+| `form`                            | Collects user input.                        |
+| `required`                        | Prevents submission when a field is empty.  |
+| `addEventListener("submit", ...)` | Runs JavaScript when the form is submitted. |
+| `event.preventDefault()`          | Prevents the page from refreshing.          |
+| `.value`                          | Gets the entered input.                     |
+| `innerHTML`                       | Displays the submitted details.             |
+| `reset()`                         | Clears the form fields.                     |
+
+How to run: Save all three files in the same folder and open `index.html` in your browser. Fill in the details and click Submit. The submitted information will appear below the form.
