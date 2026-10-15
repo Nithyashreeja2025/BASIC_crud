@@ -1,0 +1,507 @@
+I'll give you the complete Vue 3 + Spring Boot + MongoDB hotel booking CRUD application, using your preferred simple structure: no service class, only model, repository, and controller.
+
+The application will let you:
+
+- Add rooms and view all rooms.
+- Add bookings for existing rooms.
+- Automatically increase the room's booking count and update its status.
+- Display bookings alongside room details.
+- Delete bookings and update the room's count and status.
+- Edit booking details.
+
+## 1. Project structure
+
+Frontend — Vue 3
+
+VS Code · `localhost:5173`
+
+`src/App.vue`
+
+Backend — Spring Boot
+
+IntelliJ IDEA · `localhost:8080`
+
+`model/Room.java`, `model/Booking.java`
+
+`repository/RoomRepo.java`, `repository/BookingRepo.java`
+
+`controller/RoomController.java`, `controller/BookingController.java`
+
+Database — MongoDB `hotel` database
+
+`rooms` and `bookings` collections
+
+## 2. Spring Boot backend
+
+Create these files in IntelliJ under `src/main/java/com/example/own/`.
+
+### `Room.java`
+
+```
+
+package com.example.own.model;
+
+import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "rooms")
+public class Room {
+    @Id
+    private String id;
+    private String roomNumber;
+    private int bookingCount = 0;
+    private String status = "AVAILABLE";
+}
+
+```
+
+### `Booking.java`
+
+```
+
+package com.example.own.model;
+
+import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "bookings")
+public class Booking {
+    @Id
+    private String id;
+    private String customerName;
+    private String roomId;
+}
+
+```
+
+### `RoomRepo.java`
+
+```
+
+package com.example.own.repository;
+
+import com.example.own.model.Room;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+public interface RoomRepo extends MongoRepository<Room, String> {
+}
+
+```
+
+### `BookingRepo.java`
+
+```
+
+package com.example.own.repository;
+
+import com.example.own.model.Booking;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+public interface BookingRepo extends MongoRepository<Booking, String> {
+}
+
+```
+
+### `RoomController.java`
+
+```
+
+package com.example.own.controller;
+
+import com.example.own.model.Room;
+import com.example.own.repository.RoomRepo;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@CrossOrigin(origins = "http://localhost:5173")
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/rooms")
+public class RoomController {
+
+    private final RoomRepo repo;
+
+    @PostMapping
+    public Room addRoom(@RequestBody Room room) {
+        room.setBookingCount(0);
+        room.setStatus("AVAILABLE");
+        return repo.save(room);
+    }
+
+    @GetMapping
+    public List<Room> getRooms() {
+        return repo.findAll();
+    }
+}
+
+```
+
+### `BookingController.java`
+
+This includes add, display, edit, and delete. Editing a booking between rooms updates both rooms' counts.
+
+```
+
+package com.example.own.controller;
+
+import com.example.own.model.Booking;
+import com.example.own.model.Room;
+import com.example.own.repository.BookingRepo;
+import com.example.own.repository.RoomRepo;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@CrossOrigin(origins = "http://localhost:5173")
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/bookings")
+public class BookingController {
+
+    private final BookingRepo bookingRepo;
+    private final RoomRepo roomRepo;
+
+    private void changeCount(String roomId, int change) {
+        Room room = roomRepo.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        int count = Math.max(0, room.getBookingCount() + change);
+        room.setBookingCount(count);
+        room.setStatus(count > 0 ? "BOOKED" : "AVAILABLE");
+        roomRepo.save(room);
+    }
+
+    @PostMapping
+    public Booking addBooking(@RequestBody Booking booking) {
+        roomRepo.findById(booking.getRoomId())
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        Booking saved = bookingRepo.save(booking);
+        changeCount(saved.getRoomId(), 1);
+        return saved;
+    }
+
+    @GetMapping
+    public List<Booking> getBookings() {
+        return bookingRepo.findAll();
+    }
+
+    @PutMapping("/{id}")
+    public Booking updateBooking(@PathVariable String id,
+                                 @RequestBody Booking booking) {
+        Booking old = bookingRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        roomRepo.findById(booking.getRoomId())
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        if (!old.getRoomId().equals(booking.getRoomId())) {
+            changeCount(old.getRoomId(), -1);
+            changeCount(booking.getRoomId(), 1);
+        }
+
+        old.setCustomerName(booking.getCustomerName());
+        old.setRoomId(booking.getRoomId());
+        return bookingRepo.save(old);
+    }
+
+    @DeleteMapping("/{id}")
+    public String deleteBooking(@PathVariable String id) {
+        Booking booking = bookingRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        bookingRepo.deleteById(id);
+        changeCount(booking.getRoomId(), -1);
+        return "Booking deleted";
+    }
+}
+
+```
+
+### `application.properties`
+
+```
+spring.data.mongodb.uri=mongodb://localhost:27017/hotel
+server.port=8080
+```
+
+Make sure Lombok, Spring Web, and Spring Data MongoDB are included in your Maven dependencies.
+
+## 3. Vue 3 frontend
+
+In VS Code, create a Vue project if you haven't already:
+
+```
+npm create vite@latest hotel-frontend -- --template vue
+cd hotel-frontend
+npm install
+npm run dev
+```
+
+Replace `src/App.vue` with the following. It uses a room dropdown for bookings, so you don't need to copy room IDs manually.
+
+```
+
+<script setup>
+import { ref, onMounted } from 'vue'
+
+const rooms = ref([])
+const bookings = ref([])
+const page = ref('rooms')
+
+const roomNumber = ref('')
+const customerName = ref('')
+const roomId = ref('')
+const bookingId = ref('')
+
+const roomApi = 'http://localhost:8080/api/rooms'
+const bookingApi = 'http://localhost:8080/api/bookings'
+
+async function loadData() {
+  const r = await fetch(roomApi)
+  const b = await fetch(bookingApi)
+
+  if (!r.ok || !b.ok) throw new Error('Could not load data')
+
+  rooms.value = await r.json()
+  bookings.value = await b.json()
+}
+
+async function addRoom() {
+  if (!roomNumber.value.trim()) {
+    alert('Enter room number')
+    return
+  }
+
+  const response = await fetch(roomApi, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roomNumber: roomNumber.value })
+  })
+
+  if (!response.ok) {
+    alert('Could not add room')
+    return
+  }
+
+  roomNumber.value = ''
+  await loadData()
+}
+
+async function saveBooking() {
+  if (!customerName.value.trim() || !roomId.value) {
+    alert('Enter customer name and select a room')
+    return
+  }
+
+  const response = await fetch(
+    bookingId.value
+      ? `${bookingApi}/${bookingId.value}`
+      : bookingApi,
+    {
+      method: bookingId.value ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: customerName.value,
+        roomId: roomId.value
+      })
+    }
+  )
+
+  if (!response.ok) {
+    alert('Booking failed')
+    return
+  }
+
+  clearForm()
+  await loadData()
+}
+
+function editBooking(b) {
+  bookingId.value = b.id
+  customerName.value = b.customerName
+  roomId.value = b.roomId
+  page.value = 'addBooking'
+}
+
+function clearForm() {
+  bookingId.value = ''
+  customerName.value = ''
+  roomId.value = ''
+}
+
+async function deleteBooking(id) {
+  if (!confirm('Delete this booking?')) return
+
+  const response = await fetch(`${bookingApi}/${id}`, {
+    method: 'DELETE'
+  })
+
+  if (!response.ok) {
+    alert('Delete failed')
+    return
+  }
+
+  await loadData()
+}
+
+onMounted(() => {
+  loadData().catch(error => alert(error.message))
+})
+</script>
+
+<template>
+  <h1>Hotel Booking System</h1>
+
+  <button @click="page = 'rooms'">Rooms</button>
+  <button @click="page = 'addRoom'">Add Room</button>
+  <button @click="page = 'bookings'">Bookings</button>
+  <button @click="page = 'addBooking'; clearForm()">
+    Add Booking
+  </button>
+
+  <hr>
+
+  <div v-if="page === 'addRoom'">
+    <h2>Add Room</h2>
+    <input v-model="roomNumber" placeholder="Room number">
+    <button @click="addRoom">Save Room</button>
+  </div>
+
+  <div v-if="page === 'rooms'">
+    <h2>Rooms</h2>
+
+    <table border="1" cellpadding="8">
+      <tbody>
+        <tr>
+          <th>Room Number</th>
+          <th>Booking Count</th>
+          <th>Status</th>
+        </tr>
+
+        <tr v-for="r in rooms" :key="r.id">
+          <td>{{ r.roomNumber }}</td>
+          <td>{{ r.bookingCount }}</td>
+          <td>{{ r.status }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div v-if="page === 'addBooking'">
+    <h2>{{ bookingId ? 'Edit Booking' : 'Add Booking' }}</h2>
+
+    <input
+      v-model="customerName"
+      placeholder="Customer name"
+    >
+
+    <select v-model="roomId">
+      <option value="">Select room</option>
+      <option v-for="r in rooms" :key="r.id" :value="r.id">
+        Room {{ r.roomNumber }} - {{ r.status }}
+      </option>
+    </select>
+
+    <button @click="saveBooking">
+      {{ bookingId ? 'Update' : 'Save Booking' }}
+    </button>
+
+    <button @click="clearForm(); page = 'bookings'">
+      Cancel
+    </button>
+  </div>
+
+  <div v-if="page === 'bookings'">
+    <h2>Bookings</h2>
+
+    <table border="1" cellpadding="8">
+      <tbody>
+        <tr>
+          <th>Customer</th>
+          <th>Room Number</th>
+          <th>Actions</th>
+        </tr>
+
+        <tr v-for="b in bookings" :key="b.id">
+          <td>{{ b.customerName }}</td>
+          <td>
+            {{ rooms.find(r => r.id === b.roomId)?.roomNumber || 'Unknown' }}
+          </td>
+          <td>
+            <button @click="editBooking(b)">Edit</button>
+            <button @click="deleteBooking(b.id)">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<style scoped>
+body {
+  font-family: Arial, sans-serif;
+}
+
+button, input, select {
+  padding: 8px;
+  margin: 5px;
+}
+
+table {
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+</style>
+
+```
+
+## 4. Run the full-stack application
+
+Follow this order:
+
+1. Start MongoDB.
+2. Run `OwnApplication.java` in IntelliJ.
+3. Run `npm run dev` in VS Code.
+4. Open the Vite URL, usually `http://localhost:5173`.
+
+## 5. Test the complete workflow
+
+[Acacus Hotel (Kigali, ), Kigali hotel discounts | Hotels.com](https://images.openai.com/static-rsc-4/X09q16rbqHvkiPd-qydHNs6HkBqcTRtOFAtRcv8sXAen0UDNdANSELggLY0pkHKdTApM7aTf2-ZKhvfFA6RoK-Gz49kwOIiNeSHNCWxWlQmXmGTOzf5qGwh_YUxTOf3bn4WiiAzcyoyMx71eOLcBYIswq759zNvy-1uOlLx-mMA?purpose=inline)
+
+Step 1 — Add a room
+
+Click Add Room and enter `101`. Go to Rooms to see its initial count `0` and status `AVAILABLE`.
+
+[The Different Hospitality Sectors - HRC International](https://images.openai.com/static-rsc-4/pU7j8YqogI1d9LcH5l-SNn3vRGP1oTklSvWb08H3wGyIHBDdxbhpwtHUH2oEBPWDuiW7jpoCN6YWRvMn96vWrp1QxTHEpR3MAN0jbl-e1R0agMnP5ry6ML0MveC-jRqinnAyu378qgGogTTDVgw0vy86a9CgE8HYUEvftfOju2E?purpose=inline)
+
+Step 2 — Add a booking
+
+Click Add Booking, enter a customer name, select Room 101, and save. The booking appears in the Bookings page.
+
+[Have a kiho’ day. : 네이버 블로그](https://images.openai.com/static-rsc-4/I6WDAbrq6oCwi8_qDvH3B_2OCLEw_a9QOxWOkdY8lUIox_YgfXNrHBo9WC8B4Ocj7iaq2lp0Sd_GFkjyIbKf5VuxUQey93Cavy0AJxzbqItz8rFcfXM0PyizeGU1ilLlxspKTOiSZOAcJvfMzM_12x22fBSj_24fG-XfO28Q5SU?purpose=inline)
+
+Step 3 — Check the room
+
+Room 101 now has count `1` and status `BOOKED`. Add another booking and the count increases to `2`.
+
+The expected database behavior is:
+
+| Action              | Booking count | Room status |
+| ------------------- | ------------- | ----------- |
+| Create room         | 0             | AVAILABLE   |
+| Add first booking   | 1             | BOOKED      |
+| Add second booking  | 2             | BOOKED      |
+| Delete one booking  | 1             | BOOKED      |
+| Delete last booking | 0             | AVAILABLE   |
+
+Important: This is a simple learning project. The booking count is maintained by the controller, so don't manually modify it in MongoDB. In a production application, concurrent bookings and database failures require additional safeguards.
