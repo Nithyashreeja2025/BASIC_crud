@@ -1,0 +1,142 @@
+### Employee Database Project using `javax.servlet`, MySQL and Tomcat
+
+I'll give you the complete project using `javax.servlet` instead of `jakarta.servlet`, including GET, POST, PUT and DELETE, the folder structure, database connection, compilation, and running instructions on Windows.
+
+Important: Since this project uses `javax.servlet`, use Apache Tomcat 9. Tomcat 10 and 10.1 use `jakarta.servlet`, so this code will not work on them without changes.
+
+### 1\. Software required
+
+| Software                   | Purpose                         |
+| -------------------------- | ------------------------------- |
+| JDK 17                     | Compile and run Java            |
+| Apache Tomcat 9            | Run the Servlet web application |
+| MySQL Server               | Store employee records          |
+| MySQL Connector/J          | Connect Java to MySQL           |
+| VS Code or Notepad         | Write the code                  |
+| MySQL Workbench (optional) | Execute SQL commands            |
+
+### 2\. Complete folder structure
+
+Assume you extract Tomcat to `C:\apache-tomcat-9.0.xx`. Your project should look like this:
+
+apache-tomcat-9.0.xx
+
+webapps
+
+EmployeeDBProject
+
+`index.html`
+
+WEB-INF
+
+`web.xml`
+
+classes
+
+`EmployeeDBServlet.class`
+
+lib
+
+`mysql-connector-j.jar`
+
+Your Java source file, `EmployeeDBServlet.java`, can be saved in a separate folder such as `C:\JavaProjects\EmployeeDBProject\`. You compile it into `WEB-INF\classes`.
+
+### 3\. Create the MySQL database
+
+Open MySQL Workbench, connect to your local MySQL server, and execute the following SQL.
+
+```sql
+CREATE DATABASE IF NOT EXISTS TEST;
+
+USE TEST;
+
+CREATE TABLE IF NOT EXISTS Employees (
+    id INT PRIMARY KEY,
+    first VARCHAR(50),
+    last VARCHAR(50),
+    age INT
+);
+
+INSERT IGNORE INTO Employees
+    (id, first, last, age)
+VALUES
+    (1, 'Arun', 'Kumar', 22),
+    (2, 'Priya', 'Sharma', 21);
+
+SELECT * FROM Employees;
+```
+
+Expected result:
+
+| id  | first | last   | age |
+| --- | ----- | ------ | --- |
+| 1   | Arun  | Kumar  | 22  |
+| 2   | Priya | Sharma | 21  |
+
+If the database and table already exist, you do not need to create them again.
+
+### 4\. HTML code — `index.html`
+
+Create `index.html` inside `EmployeeDBProject`.
+
+This page provides forms for all four operations. Because HTML forms natively support only GET and POST, the PUT and DELETE forms send a POST request with a hidden `_method` field, which the servlet uses to select the operation.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Database</title>
+</head>
+<body>
+    <h2>Employee Database</h2>
+
+    <h3>1. View Employees - GET</h3>
+    <form action="employees" method="get">
+        <input type="submit" value="View Employees">
+    </form>
+
+    <hr>
+
+    <h3>2. Add Employee - POST</h3>
+    <form action="employees" method="post">
+        ID: <input type="number" name="id" required><br><br>
+        First Name: <input type="text" name="first" required><br><br>
+        Last Name: <input type="text" name="last" required><br><br>
+        Age: <input type="number" name="age" required><br><br>
+
+        <input type="submit" value="Add Employee">
+    </form>
+
+    <hr>
+
+    <h3>3. Update Employee - PUT</h3>
+    <form action="employees" method="post">
+        <input type="hidden" name="_method" value="PUT">
+
+        Employee ID: <input type="number" name="id" required><br><br>
+        First Name: <input type="text" name="first" required><br><br>
+        Last Name: <input type="text" name="last" required><br><br>
+        Age: <input type="number" name="age" required><br><br>
+
+        <input type="submit" value="Update Employee">
+    </form>
+
+    <hr>
+
+    <h3>4. Delete Employee - DELETE</h3>
+    <form action="employees" method="post">
+        <input type="hidden" name="_method" value="DELETE">
+
+        Employee ID: <input type="number" name="id" required><br><br>
+
+        <input type="submit" value="Delete Employee">
+    </form>
+</body>
+</html>
+```
+
+### 5\. Java Servlet code — `EmployeeDBServlet.java`
+
+Save this file in `C:\JavaProjects\EmployeeDBProject\EmployeeDBServlet.java`.
+
+Replace `your_mysql_pas
