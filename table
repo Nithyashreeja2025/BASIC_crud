@@ -1,0 +1,31 @@
+```java
+import java.io.*;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
+
+public class data extends HttpServlet {
+
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        response.setContentType("text/html");
+        PrintWriter out = response.getWriter();
+
+        int num1 = Integer.parseInt(request.getParameter("num1"));
+        int num2 = Integer.parseInt(request.getParameter("num2"));
+
+        int sum = num1 + num2;
+
+        out.println("<html><body>");
+        out.println("<h2>Addition Result</h2>");
+
+        out.println("<table border='1' cellpadding='10'>");
+        out.println("<tr><th>Number 1</th><th>Number 2</th><th>Sum</th></tr>");
+        out.println("<tr><td>" + num1 + "</td><td>" + num2 + "</td><td>" + sum + "</td></tr>");
+        out.println("</table>");
+
+        out.println("</body></html>");
+        out.close();
+    }
+}
+```
