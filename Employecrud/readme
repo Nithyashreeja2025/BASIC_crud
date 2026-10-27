@@ -1,0 +1,40 @@
+1. POST Employee
+URL: http://localhost:8080/api/employees
+
+Method: POST → Body → raw → JSON
+{
+  "id": "101",
+  "name": "Arun",
+  "baseSal": 30000
+}
+
+
+2. POST Bonus
+URL: http://localhost:8080/api/bonuses
+
+Method: POST → Body → raw → JSON
+{
+  "id": "B1",
+  "empid": "101",
+  "bonus": 5000,
+  "dept": "IT"
+}
+
+
+3. GET Combined Employee Details
+URL: http://localhost:8080/api/employees
+
+Method: GET
+
+Expected response:
+[
+  {
+    "empid": "101",
+    "name": "Arun",
+    "dept": "IT",
+    "fullSal": 35000.0
+  }
+]
+
+
+Important: The employee's id and bonus's empid must both be "101" for the records to match.
