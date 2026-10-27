@@ -1,0 +1,89 @@
+
+<script setup>
+import { ref, onMounted } from 'vue'
+
+const employees = ref([])
+const id = ref(''), name = ref(''), baseSal = ref('')
+const bonusId = ref(''), empid = ref('')
+const bonus = ref(''), dept = ref('')
+const page = ref('home')
+
+const api = 'http://localhost:8080/api/employees'
+const bonusApi = 'http://localhost:8080/api/bonuses'
+
+async function getEmployees() {
+  employees.value = await (await fetch(api)).json()
+}
+
+async function saveEmployee() {
+  await fetch(api, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: id.value, name: name.value,
+      baseSal: Number(baseSal.value)
+    })
+  })
+  id.value = name.value = baseSal.value = ''
+  alert('Employee saved')
+}
+
+async function saveBonus() {
+  await fetch(bonusApi, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: bonusId.value, empid: empid.value,
+      bonus: Number(bonus.value), dept: dept.value
+    })
+  })
+  bonusId.value = empid.value = bonus.value = dept.value = ''
+  getEmployees()
+  alert('Bonus saved')
+}
+
+onMounted(getEmployees)
+</script>
+
+<template>
+  <h1>Employee Management</h1>
+
+  <a href="#" @click.prevent="page='home'">Home</a> |
+  <a href="#" @click.prevent="page='employee'">Employee</a> |
+  <a href="#" @click.prevent="page='bonus'">Bonus</a> |
+  <a href="#" @click.prevent="page='details'; getEmployees()">View Details</a>
+
+  <hr>
+
+  <div v-if="page==='home'">
+    <h2>Welcome</h2>
+  </div>
+
+  <div v-if="page==='employee'">
+    <h2>Add Employee</h2>
+    <input v-model="id" placeholder="Employee ID">
+    <input v-model="name" placeholder="Name">
+    <input v-model="baseSal" type="number" placeholder="Base Salary">
+    <button @click="saveEmployee">Save</button>
+  </div>
+
+  <div v-if="page==='bonus'">
+    <h2>Add Bonus</h2>
+    <input v-model="bonusId" placeholder="Bonus ID">
+    <input v-model="empid" placeholder="Employee ID">
+    <input v-model="bonus" type="number" placeholder="Bonus">
+    <input v-model="dept" placeholder="Department">
+    <button @click="saveBonus">Save</button>
+  </div>
+
+  <div v-if="page==='details'">
+    <h2>Employee Details</h2>
+    <button @click="getEmployees">Refresh</button>
+    <p v-for="e in employees" :key="e.empid">
+      ID: {{ e.empid }} |
+      Name: {{ e.name }} |
+      Dept: {{ e.dept }} |
+      Full Salary: {{ e.fullSal }}
+    </p>
+  </div>
+</template>
