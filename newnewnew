@@ -1,0 +1,685 @@
+We'll create a simple Shopping Cart application using Spring Boot, MongoDB, and Vue.js.
+Features
+1. Add products with product ID and details.
+2. Store products in the MongoDB products collection.
+3. Store each customer's cart as an array of product IDs in the customers collection.
+4. Add a product to the customer's cart using the product ID.
+5. Remove a product from the customer's cart using the product ID.
+6. Display the customer's cart.
+1. MongoDB collections
+products
+{
+  "_id": "P101",
+  "name": "Laptop",
+  "price": 50000
+}
+
+customers
+{
+  "_id": "C101",
+  "name": "Nithya",
+  "cart": ["P101", "P102"]
+}
+
+Logic: When a customer adds product ID P101, the backend checks whether the product exists and adds its ID to the customer's cart array. When the customer removes P101, its ID is removed from that array.
+Part 1: Spring Boot Backend
+Create a Spring Boot project with these dependencies:
+- Spring Web
+- Spring Data MongoDB
+Project structure
+src/main/java/com/example/cart/
+    CartApplication.java
+    model/
+        Product.java
+        Customer.java
+    repository/
+        ProductRepository.java
+        CustomerRepository.java
+    controller/
+        CartController.java
+
+2. Product.java
+model/Product.java
+package com.example.cart.model;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Document(collection = "products")
+public class Product {
+
+    @Id
+    private String productId;
+    private String name;
+    private double price;
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public void setProductId(String productId) {
+        this.productId = productId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+}
+
+3. Customer.java
+model/Customer.java
+
+The cart array stores the product IDs added by the customer.
+package com.example.cart.model;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import java.util.*;
+
+@Document(collection = "customers")
+public class Customer {
+
+    @Id
+    private String customerId;
+    private String name;
+    private List<String> cart = new ArrayList<>();
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public List<String> getCart() {
+        return cart;
+    }
+
+    public void setCart(List<String> cart) {
+        this.cart = cart;
+    }
+}
+
+4. ProductRepository.java
+repository/ProductRepository.java
+package com.example.cart.repository;
+
+import com.example.cart.model.Product;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+public interface ProductRepository
+        extends MongoRepository<Product, String> {
+}
+
+5. CustomerRepository.java
+repository/CustomerRepository.java
+package com.example.cart.repository;
+
+import com.example.cart.model.Customer;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+public interface CustomerRepository
+        extends MongoRepository<Customer, String> {
+}
+
+6. CartController.java
+controller/CartController.java
+
+This controller adds products, creates customers, adds products to carts, removes products, and displays the cart.
+package com.example.cart.controller;
+
+import com.example.cart.model.*;
+import com.example.cart.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import java.util.*;
+
+@RestController
+@RequestMapping("/api")
+@CrossOrigin
+public class CartController {
+
+    @Autowired
+    ProductRepository productRepo;
+
+    @Autowired
+    CustomerRepository customerRepo;
+
+    // Add product
+    @PostMapping("/products")
+    public Product addProduct(@RequestBody Product p) {
+        return productRepo.save(p);
+    }
+
+    // Display all products
+    @GetMapping("/products")
+    public List<Product> getProducts() {
+        return productRepo.findAll();
+    }
+
+    // Create customer
+    @PostMapping("/customers")
+    public Customer addCustomer(@RequestBody Customer c) {
+        c.setCart(new ArrayList<>());
+        return customerRepo.save(c);
+    }
+
+    // Add product to cart using IDs
+    @PostMapping("/cart/{customerId}/{productId}")
+    public String addToCart(
+            @PathVariable String customerId,
+            @PathVariable String productId) {
+
+        Customer c = customerRepo.findById(customerId).orElse(null);
+        Product p = productRepo.findById(productId).orElse(null);
+
+        if (c == null)
+            return "Customer not found";
+
+        if (p == null)
+            return "Product not found";
+
+        if (c.getCart().contains(productId))
+            return "Product already in cart";
+
+        c.getCart().add(productId);
+        customerRepo.save(c);
+
+        return "Product added to cart";
+    }
+
+    // Remove product from cart
+    @DeleteMapping("/cart/{customerId}/{productId}")
+    public String removeFromCart(
+            @PathVariable String customerId,
+            @PathVariable String productId) {
+
+        Customer c = customerRepo.findById(customerId).orElse(null);
+
+        if (c == null)
+            return "Customer not found";
+
+        if (!c.getCart().remove(productId))
+            return "Product not in cart";
+
+        customerRepo.save(c);
+
+        return "Product removed from cart";
+    }
+
+    // Display customer's cart IDs
+    @GetMapping("/cart/{customerId}")
+    public Customer getCart(@PathVariable String customerId) {
+        return customerRepo.findById(customerId).orElse(null);
+    }
+}
+
+7. application.properties
+src/main/resources/application.properties
+spring.data.mongodb.uri=mongodb://localhost:27017/shopdb
+server.port=8080
+
+8. CartApplication.java
+package com.example.cart;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class CartApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(CartApplication.class, args);
+    }
+}
+
+Part 2: Vue.js Frontend
+Create a Vue project using Vite if you don't already have one.
+npm create vite@latest cart-frontend -- --template vue
+cd cart-frontend
+npm install
+npm run dev
+
+9. App.vue
+Replace src/App.vue with this code.
+
+This single file contains the forms and buttons for adding products, creating customers, adding products to carts, and removing products.
+<script setup>
+import { ref, onMounted } from 'vue'
+
+const products = ref([])
+const cart = ref([])
+const customerId = ref('C101')
+const customerName = ref('')
+
+const productId = ref('')
+const productName = ref('')
+const price = ref(0)
+
+const api = 'http://localhost:8080/api'
+
+// Get all products
+async function getProducts() {
+  products.value = await (await fetch(api + '/products')).json()
+  getCart()
+}
+
+// Add product
+async function addProduct() {
+  const p = {
+    productId: productId.value,
+    name: productName.value,
+    price: price.value
+  }
+
+  await fetch(api + '/products', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(p)
+  })
+
+  productId.value = ''
+  productName.value = ''
+  price.value = 0
+
+  getProducts()
+}
+
+// Create customer
+async function addCustomer() {
+  const c = {
+    customerId: customerId.value,
+    name: customerName.value,
+    cart: []
+  }
+
+  const res = await fetch(api + '/customers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(c)
+  })
+
+  alert(res.ok ? 'Customer created' : 'Error creating customer')
+  getCart()
+}
+
+// Add product to cart
+async function addToCart(id) {
+  const res = await fetch(
+    api + '/cart/' + customerId.value + '/' + id,
+    { method: 'POST' }
+  )
+
+  alert(await res.text())
+  getCart()
+}
+
+// Get customer's cart
+async function getCart() {
+  const res = await fetch(api + '/cart/' + customerId.value)
+
+  if (res.ok) {
+    const c = await res.json()
+    cart.value = c ? c.cart || [] : []
+  } else {
+    cart.value = []
+  }
+}
+
+// Remove product from cart
+async function removeProduct(id) {
+  const res = await fetch(
+    api + '/cart/' + customerId.value + '/' + id,
+    { method: 'DELETE' }
+  )
+
+  alert(await res.text())
+  getCart()
+}
+
+onMounted(getProducts)
+</script>
+
+<template>
+  <h1>Shopping Cart</h1>
+
+  <h2>Add Product</h2>
+  <input v-model="productId" placeholder="Product ID">
+  <input v-model="productName" placeholder="Product Name">
+  <input v-model.number="price" type="number" placeholder="Price">
+  <button @click="addProduct">Add Product</button>
+
+  <hr>
+
+  <h2>Create Customer</h2>
+  <input v-model="customerId" placeholder="Customer ID">
+  <input v-model="customerName" placeholder="Customer Name">
+  <button @click="addCustomer">Create Customer</button>
+
+  <hr>
+
+  <h2>Products</h2>
+  <table border="1" cellpadding="8">
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Price</th>
+      <th>Action</th>
+    </tr>
+
+    <tr v-for="p in products" :key="p.productId">
+      <td>{{ p.productId }}</td>
+      <td>{{ p.name }}</td>
+      <td>{{ p.price }}</td>
+      <td>
+        <button @click="addToCart(p.productId)">
+          Add to Cart
+        </button>
+      </td>
+    </tr>
+  </table>
+
+  <hr>
+
+  <h2>Customer Cart</h2>
+  <input v-model="customerId" placeholder="Customer ID">
+  <button @click="getCart">View Cart</button>
+
+  <table border="1" cellpadding="8">
+    <tr>
+      <th>Product ID</th>
+      <th>Product Name</th>
+      <th>Action</th>
+    </tr>
+
+    <tr v-for="id in cart" :key="id">
+      <td>{{ id }}</td>
+      <td>
+        {{ products.find(p => p.productId === id)?.name || 'Product not found' }}
+      </td>
+      <td>
+        <button @click="removeProduct(id)">Remove</button>
+      </td>
+    </tr>
+  </table>
+</template>
+
+Part 3: Test the application
+Step 1: Add a product
+Enter these details in the Vue page:
+Field	Value
+Product ID	P101
+Product Name	Laptop
+Price	50000
+
+
+Click Add Product.
+
+MongoDB's products collection stores:
+{
+  "_id": "P101",
+  "name": "Laptop",
+  "price": 50000
+}
+
+Step 2: Create a customer
+Enter:
+Field	Value
+Customer ID	C101
+Customer Name	Nithya
+
+
+Click Create Customer.
+
+MongoDB's customers collection stores:
+{
+  "_id": "C101",
+  "name": "Nithya",
+  "cart": []
+}
+
+Step 3: Add a product to the cart
+Click Add to Cart next to Laptop.
+
+The backend calls:
+POST /api/cart/C101/P101
+
+MongoDB updates the customer document:
+{
+  "_id": "C101",
+  "name": "Nithya",
+  "cart": ["P101"]
+}
+
+Step 4: View the cart
+Click View Cart.
+
+The frontend displays:
+Product ID	Product Name	Action
+P101	Laptop	Remove
+
+
+Step 5: Remove the product
+Click Remove next to Laptop.
+
+MongoDB updates the customer document:
+{
+  "_id": "C101",
+  "name": "Nithya",
+  "cart": []
+}
+
+The product remains in the products collection; only its ID is removed from the customer's cart.
+API endpoints for revision
+Method	Endpoint	Purpose
+POST	/api/products	Add product
+GET	/api/products	Display products
+POST	/api/customers	Create customer
+POST	/api/cart/C101/P101	Add product ID to cart
+GET	/api/cart/C101	View customer cart
+DELETE	/api/cart/C101/P101	Remove product ID from cart
+
+
+Important: Start MongoDB first, then run Spring Boot on port 8080 and Vue on its Vite development port. The code assumes the customer already exists before products are added to their cart. Creating a customer with an existing ID resets its cart, so avoid recreating the same customer when you want to preserve existing cart items.
+
+
+
+
+
+
+
+
+
+
+
+
+
+give all api and repected post to enter in postman
+
+
+
+
+
+
+
+
+
+
+
+
+Here are all the APIs and their respective Postman requests for your Spring Boot + MongoDB Shopping Cart application.
+
+Base URL: http://localhost:8080/api
+1. Add Product
+Method: POST
+URL:
+http://localhost:8080/api/products
+
+Postman → Body → raw → JSON
+{
+  "productId": "P101",
+  "name": "Laptop",
+  "price": 50000
+}
+
+Response:
+{
+  "productId": "P101",
+  "name": "Laptop",
+  "price": 50000
+}
+
+MongoDB collection: products
+2. Get All Products
+Method: GET
+URL:
+http://localhost:8080/api/products
+
+Response:
+[
+  {
+    "productId": "P101",
+    "name": "Laptop",
+    "price": 50000
+  }
+]
+
+3. Create Customer
+Method: POST
+URL:
+http://localhost:8080/api/customers
+
+Postman → Body → raw → JSON
+{
+  "customerId": "C101",
+  "name": "Nithya",
+  "cart": []
+}
+
+Response:
+{
+  "customerId": "C101",
+  "name": "Nithya",
+  "cart": []
+}
+
+MongoDB collection: customers
+4. Get All Customers
+Your current controller does not have this API. Add this method to CartController.java if you need it.
+@GetMapping("/customers")
+public List<Customer> getCustomers() {
+    return customerRepo.findAll();
+}
+
+Method: GET
+URL:
+http://localhost:8080/api/customers
+
+Response:
+[
+  {
+    "customerId": "C101",
+    "name": "Nithya",
+    "cart": []
+  }
+]
+
+5. Add Product to Customer Cart
+Method: POST
+URL:
+http://localhost:8080/api/cart/C101/P101
+
+Here:
+- C101 = Customer ID
+- P101 = Product ID
+Body: No body required.
+
+Response:
+Product added to cart
+
+MongoDB customers collection updates to:
+{
+  "customerId": "C101",
+  "name": "Nithya",
+  "cart": ["P101"]
+}
+
+If the product is already in the cart:
+Product already in cart
+
+6. View Customer Cart
+Method: GET
+URL:
+http://localhost:8080/api/cart/C101
+
+Response:
+{
+  "customerId": "C101",
+  "name": "Nithya",
+  "cart": ["P101"]
+}
+
+The cart contains the product IDs, not the complete product details.
+7. Remove Product from Customer Cart
+Method: DELETE
+URL:
+http://localhost:8080/api/cart/C101/P101
+
+Here:
+- C101 = Customer ID
+- P101 = Product ID to remove
+Body: No body required.
+
+Response:
+Product removed from cart
+
+MongoDB updates the customer document:
+{
+  "customerId": "C101",
+  "name": "Nithya",
+  "cart": []
+}
+
+The product itself remains in the products collection.
+8. Test Error Cases
+Test	Method	URL	Expected response
+Product does not exist	POST	/api/cart/C101/P999	Product not found
+Customer does not exist	POST	/api/cart/C999/P101	Customer not found
+Add same product again	POST	/api/cart/C101/P101	Product already in cart
+Remove product not in cart	DELETE	/api/cart/C101/P101	Product not in cart
+
+
+Use the full base URL http://localhost:8080/api before each endpoint when entering it in Postman.
+Correct order to test in Postman
+Follow this sequence to avoid errors:
+1. POST /products → Add Laptop.
+2. POST /products → Add another product.
+3. GET /products → View all products.
+4. POST /customers → Create customer C101.
+5. GET /customers → View customers (after adding the controller method above).
+6. POST /cart/C101/P101 → Add Laptop to cart.
+7. GET /cart/C101 → Check cart.
+8. DELETE /cart/C101/P101 → Remove Laptop.
+9. GET /cart/C101 → Confirm the cart is empty.
+Remember: For POST requests with JSON, select Body → raw → JSON in Postman. For adding or removing cart items, no request body is required because both IDs are passed in the URL.
